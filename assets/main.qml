@@ -10,6 +10,7 @@ Page {
     Menu.definition: MenuDefinition {
         // Add a Help action
         helpAction: HelpActionItem {
+            title: "About";
             onTriggered: {
                 aboutDialog.show()
             }
@@ -18,20 +19,11 @@ Page {
             SystemDialog {
                 id: aboutDialog
                 title: "About"
-                body: "Daily Wallpaper was brought to you by - Domisy Dev\n\nLead Developer - Theodore Mavrakis\n\nSupport - domisydev@gmail.com\nVersion - 1.0"
+                body: "Daily Wallpaper was brought to you by - Domisy Dev\n\nLead Developer - Theodore Mavrakis\n\nSupport - domisydev@gmail.com\nVersion - 1.3"
             }
         ]
     }
     actions: [
-        ActionItem {
-            title: "Refresh"
-            imageSource: "asset:///images/reloadIcon.png"
-            ActionBar.placement: ActionBarPlacement.OnBar
-            onTriggered: {
-                //app.initiateRequest(bingWebImage);
-                app.initiateRequest();
-            }
-        },
         ActionItem {
             title: "Set Wallpaper"
             imageSource: "asset:///images/setBackgroundIcon.png"
@@ -41,11 +33,37 @@ Page {
             }
         },
         ActionItem {
+            title: "Refresh"
+            imageSource: "asset:///images/reloadIcon.png"
+            ActionBar.placement: ActionBarPlacement.InOverflow
+            onTriggered: {
+                shareAction.enabled = false;
+                infoAction.enabled = false;
+                app.initiateRequest();
+            }
+        },
+        ActionItem {
             title: "Info"
+            id: infoAction
+            enabled: false
             imageSource: "asset:///images/aboutIcon.png"
-            ActionBar.placement: ActionBarPlacement.OnBar
+            ActionBar.placement: ActionBarPlacement.InOverflow
             onTriggered: {
                 app.showImageInfoToast();
+            }
+        },
+        InvokeActionItem {
+            id: shareAction
+            objectName: "shareAction"
+            enabled: false
+            title: "Share"
+            ActionBar.placement: ActionBarPlacement.InOverflow
+            query {
+                mimeType: "text/plain"
+                invokeActionId: "bb.action.SHARE"
+            }
+            onTriggered: {
+                data = "Check out this great wallpaper from Bing - " + bingWebImage.url;
             }
         }
     ]
@@ -68,6 +86,10 @@ Page {
             scalingMethod: ScalingMethod.AspectFill
             horizontalAlignment: HorizontalAlignment.Center
             verticalAlignment: VerticalAlignment.Center
+            onImageChanged: {
+                shareAction.enabled = true;
+                infoAction.enabled = true;
+            }
         }
     }
 }

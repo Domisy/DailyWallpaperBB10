@@ -18,7 +18,6 @@
 #include <bb/system/SystemToast>
 #include <bb/system/SystemDialog>
 
-
 using namespace bb::data;
 using namespace bb::cascades;
 using namespace bb::system;
@@ -40,12 +39,12 @@ DailyWallpaper::DailyWallpaper(bb::cascades::Application *app) :
 	mFile = new QFile("data/bingWallpaper.jpg");
 	bingImage = root->findChild<WebImageView*>("bingImageComponent");
 	activity = root->findChild<ActivityIndicator*>("indicator");
-
+	imageUrl = "";
 	mNetworkAccessManager = new QNetworkAccessManager(this);
 
 	bool result = connect(mNetworkAccessManager,
-			SIGNAL(finished(QNetworkReply*)),
-			this, SLOT(requestFinished(QNetworkReply*)));
+			SIGNAL(finished(QNetworkReply*)), this,
+			SLOT(requestFinished(QNetworkReply*)));
 
 	// Displays a warning message if there's an issue connecting the signal
 	// and slot. This is a good practice with signals and slots as it can
@@ -86,14 +85,14 @@ void DailyWallpaper::searchWebpage(QString stringdata) {
 	//Grab image URL
 	int indexBegin = stringdata.indexOf("g_img={url:'", 0) + 12;
 	int indexEnd = stringdata.indexOf(".jpg", indexBegin) + 4;
-	QString imageUrl = "http://www.bing.com"
+	imageUrl = "http://www.bing.com"
 			+ stringdata.mid(indexBegin, indexEnd - indexBegin);
 	//Grab image info
 	indexBegin = stringdata.indexOf("class=\"hpcCopyInfo\"", 0) + 41;
 	indexEnd = stringdata.indexOf("</span>", indexBegin) - 4;
 	QString imageInfoRaw = stringdata.mid(indexBegin, indexEnd - indexBegin);
-	//grabImageInfo(imageInfoRaw);
-	imageInfo = imageInfoRaw;
+	grabImageInfo(imageInfoRaw);
+	//imageInfo = imageInfoRaw;
 
 	bingImage->setUrl(QUrl(imageUrl));
 	activity->stop();
@@ -101,17 +100,26 @@ void DailyWallpaper::searchWebpage(QString stringdata) {
 }
 
 void DailyWallpaper::grabImageInfo(QString raw) {
-	//for (int i=0; i<raw.length(); i++) {
-		int start = raw.indexOf("&#", 0);
-		int end = raw.indexOf(";", start);
-		bool * ok;
-		int intAscii = (raw.mid(start+2, end-start-2)).toInt(ok, 10);
-		QString stringAscii = QChar(intAscii);
-		//QString stringAscii = QString::fromUtf8((const char*)intAscii,-1);
-		//QString stringAscii = new QString(QChar::fromAscii((char)intAscii));
-		//stringAscii.fromAscii(intAscii);
-		imageInfo = raw.replace(start, end-start, stringAscii);
-	//}
+	QString decodedInfo = raw;
+	int start = 0;
+	for (int i = 0; i < raw.count("&#"); i++) { //occurs as many times as there are html entities found in the string.
+		start = raw.indexOf("&#", start);
+		if (start != -1) {
+			int end = raw.indexOf(";", start);
+			if (end - start <= 6) {
+				QString intAscii = (raw.mid(start + 2, end - start - 2));
+				QString stringAscii = QChar(intAscii.toInt());
+				decodedInfo = decodedInfo.replace("&#" + intAscii +";", stringAscii);
+			}
+			start++; //make sure it looks for the next occurrence starting from after the previous one
+		}
+	}
+	imageInfo = decodedInfo;
+	//QString stringAscii = QChar(intAscii);
+	//QString stringAscii = QString::fromUtf8((const char*)intAscii,-1);
+	//QString *stringAscii = new QString(QChar::fromAscii((char) intAscii));
+	//stringAscii.fromAscii(intAscii);
+	//imageInfo = raw.replace(start, end-start, stringAscii);
 }
 
 void DailyWallpaper::setImageWallpaper(QString imageUrl) {
@@ -120,8 +128,9 @@ void DailyWallpaper::setImageWallpaper(QString imageUrl) {
 
 	QNetworkAccessManager *networkAccessManagerImage =
 			new QNetworkAccessManager(this);
-	bool res = connect(networkAccessManagerImage, SIGNAL(finished(QNetworkReply*)),
-			this, SLOT(imageRequestFinished(QNetworkReply*)));
+	bool res = connect(networkAccessManagerImage,
+			SIGNAL(finished(QNetworkReply*)), this,
+			SLOT(imageRequestFinished(QNetworkReply*)));
 
 	Q_ASSERT (res);
 
@@ -148,10 +157,16 @@ void DailyWallpaper::imageRequestFinished(QNetworkReply* reply) {
 			mFile->flush();
 			mFile->close();
 			bb::platform::HomeScreen homeScreen;
-			bool result = homeScreen.setWallpaper(QUrl("data/bingWallpaper.jpg"));
+			bool result = homeScreen.setWallpaper(
+					QUrl("data/bingWallpaper.jpg"));
+			SystemToast *wallpaperSuccess = new SystemToast(this);
 			if (result) {
-				SystemToast *wallpaperSuccess = new SystemToast(this);
-				wallpaperSuccess->setBody("Image successfully set as wallpaper!");
+				wallpaperSuccess->setBody(
+						"Image successfully set as wallpaper!");
+				wallpaperSuccess->show();
+			} else {
+				wallpaperSuccess->setBody(
+						"Image could not be set as wallpaper, please try again!");
 				wallpaperSuccess->show();
 			}
 		}

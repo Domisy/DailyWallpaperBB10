@@ -27,6 +27,7 @@ public:
     Q_INVOKABLE void initiateRequest();
     Q_INVOKABLE void setImageWallpaper(QString imageUrl);
     Q_INVOKABLE void showImageInfoToast();
+    QString imageUrl;
     virtual ~DailyWallpaper() {}
 
 private slots:
