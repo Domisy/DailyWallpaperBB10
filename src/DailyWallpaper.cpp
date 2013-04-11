@@ -23,6 +23,7 @@ using namespace bb::cascades;
 using namespace bb::system;
 
 QString imageInfo;
+QString bingUrl = "http://www.bing.com/";
 
 DailyWallpaper::DailyWallpaper(bb::cascades::Application *app) :
 		QObject(app) {
@@ -61,22 +62,28 @@ void DailyWallpaper::initiateRequest() {
 	//bingImage = qobject_cast<WebImageView*>(imageView);
 	activity->start();
 	QNetworkRequest request = QNetworkRequest();
-	request.setUrl(QUrl("http://www.bing.com/"));
+	request.setUrl(QUrl(bingUrl));
 	mNetworkAccessManager->get(request);
 }
 
 void DailyWallpaper::requestFinished(QNetworkReply* reply) {
-	// Check the network reply for errors
-	if (reply->error() == QNetworkReply::NoError) {
-		const QByteArray response(reply->readAll());
-
-		const char* cString = response.constData();
-		QString responseString = QString::fromUtf8(cString);
-		qDebug() << "Net String" << responseString;
-		searchWebpage(responseString);
+	QString replyRedirect = reply->attribute(
+			QNetworkRequest::RedirectionTargetAttribute).toString();
+	if (replyRedirect != "") {
+		bingUrl = replyRedirect;
+		initiateRequest();
 	} else {
-		qDebug() << "\n Problem with the network";
-		qDebug() << "\n" << reply->errorString();
+		if (reply->error() == QNetworkReply::NoError) {
+			const QByteArray response(reply->readAll());
+
+			const char* cString = response.constData();
+			QString responseString = QString::fromUtf8(cString);
+			qDebug() << "Net String" << responseString;
+			searchWebpage(responseString);
+		} else {
+			qDebug() << "\n Problem with the network";
+			qDebug() << "\n" << reply->errorString();
+		}
 	}
 	reply->deleteLater();
 }
@@ -109,7 +116,8 @@ void DailyWallpaper::grabImageInfo(QString raw) {
 			if (end - start <= 6) {
 				QString intAscii = (raw.mid(start + 2, end - start - 2));
 				QString stringAscii = QChar(intAscii.toInt());
-				decodedInfo = decodedInfo.replace("&#" + intAscii +";", stringAscii);
+				decodedInfo = decodedInfo.replace("&#" + intAscii + ";",
+						stringAscii);
 			}
 			start++; //make sure it looks for the next occurrence starting from after the previous one
 		}

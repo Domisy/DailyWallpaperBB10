@@ -19,7 +19,7 @@ Page {
             SystemDialog {
                 id: aboutDialog
                 title: "About"
-                body: "Daily Wallpaper was brought to you by - Domisy Dev\n\nLead Developer - Theodore Mavrakis\n\nSupport - domisydev@gmail.com\nVersion - 1.3"
+                body: "Daily Wallpaper was brought to you by - Domisy Dev\n\nLead Developer - Theodore Mavrakis\n\nSupport - domisydev@gmail.com\nVersion - 1.3.3"
             }
         ]
     }
@@ -63,7 +63,7 @@ Page {
                 invokeActionId: "bb.action.SHARE"
             }
             onTriggered: {
-                data = "Check out this great wallpaper from Bing - " + bingWebImage.url;
+                data = "Check out this great wallpaper - " + bingWebImage.url + " from Daily Wallpaper using Bing http://bit.ly/10UI0Gh";
             }
         }
     ]
